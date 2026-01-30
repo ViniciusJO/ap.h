@@ -14,17 +14,19 @@ extern "C" {
 #define FLAGS_LIST FLAG(default_flag, _, none, false, NULL)
 #endif // FLAGS_LIST
 
-#ifndef ARGS_LIST
-#define ARGS_LIST ARG(default_arg, false, NULL)
+#ifndef POS_ARGS_LIST
+#define POS_ARGS_LIST POS_ARG(default_arg, false, NULL)
 #endif // FLAGS_LIST
 
 typedef bool none;
 
-typedef struct {
-#define FLAG(NAME, SF, TYPE, REQUIRED, DEFAULT) TYPE NAME;
-  FLAGS_LIST
-#undef FLAG
-} Flags;
+// typedef struct {
+// #ifdef FLAGS_LIST
+// #define FLAG(NAME, SF, TYPE, REQUIRED, DEFAULT) TYPE NAME;
+//   FLAGS_LIST
+// #undef FLAG
+// #endif//FLAGS_LIST
+// } Flags;
 
 // struct ___Short_Flags {
 // #define FLAG(NAME, SF, TYPE, REQUIRED, DEFAULT) TYPE SF;
@@ -34,30 +36,36 @@ typedef struct {
 
 typedef struct {
   char *exec_name;
-#define ARG(NAME, REQUIRED, DEFAULT) char *NAME;
-  ARGS_LIST
-#undef ARG
-} Args;
+#ifdef POS_ARGS_LIST
+#define POS_ARG(NAME, REQUIRED, DEFAULT) char *NAME;
+  POS_ARGS_LIST
+#undef POS_ARG
+#endif//POS_ARGS_LIST
+} PosArgs;
 
 typedef struct {
-  Args args;
-  Flags flags;
-} Input;
+#ifdef FLAGS_LIST
+#define FLAG(NAME, SF, TYPE, REQUIRED, DEFAULT) TYPE NAME;
+  FLAGS_LIST
+#undef FLAG
+#endif//FLAGS_LIST
+  PosArgs pos_args;
+} Args;
 
 // static const char ArgsSequence[] = {
-// #define ARG(NAME, TYPE, REQUIRED, DEFAULT) #NAME,
-//   ARGS_LIST
-// #undef ARG
+// #define POS_ARG(NAME, TYPE, REQUIRED, DEFAULT) #NAME,
+//   POS_ARGS_LIST
+// #undef POS_ARG
 // };
 
 enum ArgsSequence {
-#define ARG(NAME, REQUIRED, DEFAULT) NAME,
-  ARGS_LIST
-#undef ARG
+#define POS_ARG(NAME, REQUIRED, DEFAULT) NAME,
+  POS_ARGS_LIST
+#undef POS_ARG
   ARGS_COUNT
 };
 
-AP_ATTRIBUTES Input parse_args(int argc, char **argv, char *error_msg);
+AP_ATTRIBUTES Args parse_args(int argc, char **argv, char *error_msg);
 
 #ifdef __cplusplus
 }
@@ -181,7 +189,7 @@ AP_ATTRIBUTES ArgValue __parse_arg(char *name, char *type, int argc, char **argv
     ret.type = 'c';
     return ret;
 
-  } else if (!strcmp(type, "char *")) {
+  } else if (!strcmp(type, "char*")) {
 
     ret.value.s = argv[i + 1];
     ret.type = 's';
@@ -192,11 +200,11 @@ AP_ATTRIBUTES ArgValue __parse_arg(char *name, char *type, int argc, char **argv
   return ret;
 }
 
-AP_ATTRIBUTES Input parse_args(int argc, char **argv, char *error_msg) {
+AP_ATTRIBUTES Args parse_args(int argc, char **argv, char *error_msg) {
   (void)error_msg;
   int c = 0;
-  Args args = {0};
-  Flags ret = {0};
+  // PosArgs args = {0};
+  Args ret = {0};
   struct Parsed_Args parsed = {0};
 
 #define FLAG(NAME, SF, TYPE, REQUIRED, DEFAULT) ret.NAME = (TYPE)DEFAULT;
@@ -217,7 +225,7 @@ AP_ATTRIBUTES Input parse_args(int argc, char **argv, char *error_msg) {
     parsed.NAME = true;                                                                 \
   }
 
-  args.exec_name = argv[0];
+  ret.pos_args.exec_name = argv[0];
 
   for (int i = 1; i < argc; i++) {
     if (false) assert(false && "UNRECHEABLE");
@@ -229,9 +237,9 @@ AP_ATTRIBUTES Input parse_args(int argc, char **argv, char *error_msg) {
       } else {
         if(c < ARGS_COUNT) {
           switch(c) {
-#define ARG(NAME, REQUIRED, DEFAULT) case NAME: { args.NAME = argv[i]; } break;
-            ARGS_LIST
-#undef ARG
+#define POS_ARG(NAME, REQUIRED, DEFAULT) case NAME: { ret.pos_args.NAME = argv[i]; } break;
+            POS_ARGS_LIST
+#undef POS_ARG
           }
           c++;
         } else {
@@ -252,15 +260,28 @@ AP_ATTRIBUTES Input parse_args(int argc, char **argv, char *error_msg) {
   FLAGS_LIST
 #undef FLAG
 
-#define ARG(NAME, REQUIRED, DEFAULT)                                     \
-  if (REQUIRED && args.NAME == NULL) {                                        \
-    fprintf(stderr, "ERROR: Flag --" #NAME " required but not found\n"); \
-    exit(1);                                                             \
-  }
-          ARGS_LIST
-#undef ARG
+  c = 0;
+#define POS_ARG(NAME, REQUIRED, DEFAULT) if (REQUIRED) {                                \
+  if(ret.pos_args.NAME == NULL) {                                                               \
+    fprintf(stderr, "ERROR: Positional arg " #NAME "(%d) required but not found\n", c); \
+    exit(1);                                                                            \
+  }                                                                                     \
+  c++;                                                                                  \
+} else goto unrequired;
+  POS_ARGS_LIST
+#undef POS_ARG
 
-  return (Input){ .args = args, .flags = ret };
+unrequired:
+  for (int i = c; i < ARGS_COUNT; ++i) {
+    // printf("%d: ---------------\n", i);
+    switch(i) {
+#define POS_ARG(NAME, REQUIRED, DEFAULT) case NAME: { if(ret.pos_args.NAME == NULL && DEFAULT) ret.pos_args.NAME = DEFAULT; } break;
+      POS_ARGS_LIST
+#undef POS_ARG
+    }
+  }
+
+  return ret;
 }
 
 #ifndef AP_NO_CLEAN
