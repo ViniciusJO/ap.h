@@ -25,6 +25,8 @@ Te possible types are:
 5. `char`:  expects a single character
 6. `char*` or `char *`: expects a string
 
+> **IMPORTANT: do note surround with quote any of the parameters besides the char and strings default values!**
+
 - `pos_args`: similar to the flags, define `POS_ARGS_LIST` and bellow it each line define a positional argument. Follows the template for the definition:
 
 ```c
