@@ -23,9 +23,7 @@ Te possible types are:
 3. `int`:   expects an integer
 4. `float`: expects a floating point number
 5. `char`:  expects a single character
-6. `char*`: expects a string
-
-> * It is **IMPORTANT** to set `char*` and not `char *`!
+6. `char*` or `char *`: expects a string
 
 - `pos_args`: similar to the flags, define `POS_ARGS_LIST` and bellow it each line define a positional argument. Follows the template for the definition:
 
@@ -64,7 +62,7 @@ On a phone book application:
 ```c
 // FLAG(NAME, SHORT_FORM, TYPE, REQUIRED, DEFAULT_VALUE)
 #define FLAGS_LIST                                 \
-  FLAG(contact_list, cl, char*, false, "default")  \
+  FLAG(contact_list, cl, char *, false, "default")  \
   FLAG(local, l, char*, true, "")                  \
   FLAG(DDD, _, int, false, 1)
 

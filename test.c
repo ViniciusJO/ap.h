@@ -1,6 +1,6 @@
 // FLAG(NAME, SHORT_FORM, TYPE, REQUIRED, DEFAULT_VALUE)
 #define FLAGS_LIST                                 \
-  FLAG(contact_list, cl, char*, false, "default")  \
+  FLAG(contact_list, cl, char *, false, "default")  \
   FLAG(local, l, char*, true, "")                  \
   FLAG(DDD, _, int, false, 1)
 

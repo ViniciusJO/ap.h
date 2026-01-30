@@ -189,7 +189,7 @@ AP_ATTRIBUTES ArgValue __parse_arg(char *name, char *type, int argc, char **argv
     ret.type = 'c';
     return ret;
 
-  } else if (!strcmp(type, "char*")) {
+  } else if (!strcmp(type, "char*") || !strcmp(type, "char *")) {
 
     ret.value.s = argv[i + 1];
     ret.type = 's';
