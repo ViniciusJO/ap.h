@@ -38,6 +38,8 @@ Te possible types are:
 
 The fields names have the same meaning as in the `FLAG` definition. Because of the positional nature of the args, whe a args is marked as not `REQUIRED`, all the following args are inherently not `REQUIRED`, so this field definition are ignored. It is important to reference those args in the order in they will appear in the command line. Since the `flags` are not acounted in the sequence, `flags` and `pos_args` can be interleaved.
 
+[libc](https://www.gnu.org/software/libc/) aways sets the first argument in `argv` as the binary name, so there will aways be the `pos_args.exec_name` field.
+
 ### Include
 
 After the configurations of the `flags` and the `pos_args`, define the `AP_IMPLEMENTATIONS` and include the `ap.h` header.
@@ -125,4 +127,5 @@ DDD:  1
 
 - [ ] usage and help functions
 - [ ] static and dynamic array of args
+- [ ] type and parse positional args?
 
