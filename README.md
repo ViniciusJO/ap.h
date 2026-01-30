@@ -1,8 +1,6 @@
 # ap.h - argument parser
 
-Simple to use argument parser. Its able to parse `flags` and positional parâmeters (`pos_args`). Its a single header [stb](https://github.com/nothings/stb?tab=readme-ov-file#how-do-i-use-these-libraries) style library.
-
-The definition of the args is done by setting [X macros](https://en.wikipedia.org/wiki/X_macro) and need to come before the inclusion of the header. The template to define the lists are documented bellow.
+Simple to use argument parser. Its able to parse `flags` and positional parâmeters (`pos_args`). Its a single header [stb](https://github.com/nothings/stb?tab=readme-ov-file#how-do-i-use-these-libraries) style library where the definition of the args is done by setting [X macros](https://en.wikipedia.org/wiki/X_macro) that need to come before the inclusion of the header.
 
 ## API
 ### Definitions
