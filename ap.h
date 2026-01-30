@@ -65,7 +65,7 @@ enum ArgsSequence {
   ARGS_COUNT
 };
 
-AP_ATTRIBUTES Args parse_args(int argc, char **argv, char *error_msg);
+AP_ATTRIBUTES Args parse_args(int argc, char **argv);
 
 #ifdef __cplusplus
 }
@@ -200,8 +200,7 @@ AP_ATTRIBUTES ArgValue __parse_arg(char *name, char *type, int argc, char **argv
   return ret;
 }
 
-AP_ATTRIBUTES Args parse_args(int argc, char **argv, char *error_msg) {
-  (void)error_msg;
+AP_ATTRIBUTES Args parse_args(int argc, char **argv) {
   int c = 0;
   // PosArgs args = {0};
   Args ret = {0};

@@ -5,9 +5,9 @@
   FLAG(DDD, _, int, false, 1)
 
 // POS_ARG(NAME, REQUIRED, DEFAULT_VALUE)
-#define POS_ARGS_LIST       \
-  POS_ARG(name, true, "")   \
-  POS_ARG(phone, false, "-")  \
+#define POS_ARGS_LIST                \
+  POS_ARG(name, true, "")            \
+  POS_ARG(phone, false, "-")         \
   POS_ARG(type, false, "commercial") 
 
 #define AP_IMPLEMENTATIONS
@@ -16,7 +16,7 @@
 #include <stdio.h>
 
 int main(int argc, char **argv) {
-  Args args = parse_args(argc, argv, NULL);
+  Args args = parse_args(argc, argv);
 
   printf("exec_name: %s\n\n", args.pos_args.exec_name);
 

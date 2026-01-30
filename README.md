@@ -2,7 +2,7 @@
 
 Simple to use argument parser. Its able to parse `flags` and positional parâmeters (`pos_args`). Its a single header [stb](https://github.com/nothings/stb?tab=readme-ov-file#how-do-i-use-these-libraries) style library.
 
-The definition of the args is done by setting [X macros](https://en.wikipedia.org/wiki/X_macro) and need to come before the inclusion of the header. The template to define the lists are:
+The definition of the args is done by setting [X macros](https://en.wikipedia.org/wiki/X_macro) and need to come before the inclusion of the header. The template to define the lists are documented bellow.
 
 ## API
 ### Definitions
@@ -52,15 +52,14 @@ After the configurations of the `flags` and the `pos_args`, define the `AP_IMPLE
 The lib defines the type `Args` that have as fields the flags defined before and in the field `pos_args` all the positional args defined. Use the function `parse_args` to get the filled `Args` instance. So in the main function do:
 
 ```c
-Args args = parse_args(argc, argv, NULL);
+Args args = parse_args(argc, argv);
 ```
 
 For this point on, the flags can be accessed as `args.NAME`, where `NAME` is the name of the flag. In the same manner, to access a positional argument with name `NAME`, do `args.pos_args.NAME`.
 
-### CLI use
-
-
 ## Example
+
+On a phone book application:
 
 ```c
 // FLAG(NAME, SHORT_FORM, TYPE, REQUIRED, DEFAULT_VALUE)
@@ -70,9 +69,9 @@ For this point on, the flags can be accessed as `args.NAME`, where `NAME` is the
   FLAG(DDD, _, int, false, 1)
 
 // POS_ARG(NAME, REQUIRED, DEFAULT_VALUE)
-#define POS_ARGS_LIST       \
-  POS_ARG(name, true, "")   \
-  POS_ARG(phone, false, "-")  \
+#define POS_ARGS_LIST                \
+  POS_ARG(name, true, "")            \
+  POS_ARG(phone, false, "-")         \
   POS_ARG(type, false, "commercial") 
 
 #define AP_IMPLEMENTATIONS
@@ -81,7 +80,7 @@ For this point on, the flags can be accessed as `args.NAME`, where `NAME` is the
 #include <stdio.h>
 
 int main(int argc, char **argv) {
-  Args args = parse_args(argc, argv, NULL);
+  Args args = parse_args(argc, argv);
 
   printf("exec_name: %s\n\n", args.pos_args.exec_name);
 
@@ -121,3 +120,8 @@ contact_list: list01
 local:  my local
 DDD:  1
 ```
+
+# TODO
+
+- [ ] usage and help functions
+
