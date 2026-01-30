@@ -72,7 +72,7 @@ AP_ATTRIBUTES Args parse_args(int argc, char **argv);
 #endif //__cplusplus
 #endif //__AP_H__
 
-#define AP_IMPLEMENTATIONS
+//#define AP_IMPLEMENTATIONS
 #ifdef AP_IMPLEMENTATIONS
 #ifndef __AP_IMP__
 #define __AP_IMP__
