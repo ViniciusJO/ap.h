@@ -49,6 +49,14 @@ After the configurations of the `flags` and the `pos_args`, define the `AP_IMPLE
 #include "ap.h"
 ```
 
+By default the functions defined in `ap.h` are `extern` functions which means that setting `AP_IMPLEMENTATIONS` in multiple translation units will cause linking conflicts. Its a standard in [stb](https://github.com/nothings/stb?tab=readme-ov-file#how-do-i-use-these-libraries) style libraries to set the implementation in one single translation unit and refer only to the header in the rest of the files. However there are the `AP_ATTRIBUTES` macro that allows the isolation of the implementations per translation file via:
+
+```c
+#define AP_ATTRIBUTES static
+```
+
+With this same macro is possible to specify other compiler attributes ([gcc](https://gcc.gnu.org/onlinedocs/gcc/Function-Attributes.html), [clang](https://clang.llvm.org/docs/AttributeReference.html), etc.) to the functions.
+
 ### Parsing and accessing args
 
 The lib defines the type `Args` that have as fields the flags defined before and in the field `pos_args` all the positional args defined. Use the function `parse_args` to get the filled `Args` instance. So in the main function do:
