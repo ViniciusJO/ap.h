@@ -15,7 +15,7 @@ extern "C" {
 #endif // FLAGS_LIST
 
 #ifndef ARGS_LIST
-#define ARGS_LIST ARG(default_arg, char *, false, NULL)
+#define ARGS_LIST ARG(default_arg, false, NULL)
 #endif // FLAGS_LIST
 
 typedef bool none;
@@ -34,7 +34,7 @@ typedef struct {
 
 typedef struct {
   char *exec_name;
-#define ARG(NAME, TYPE, REQUIRED, DEFAULT) TYPE NAME;
+#define ARG(NAME, REQUIRED, DEFAULT) char *NAME;
   ARGS_LIST
 #undef ARG
 } Args;
@@ -44,13 +44,20 @@ typedef struct {
   Flags flags;
 } Input;
 
-static const char ArgsSequence[] = {
-#define ARG(NAME, TYPE, REQUIRED, DEFAULT) #NAME,
+// static const char ArgsSequence[] = {
+// #define ARG(NAME, TYPE, REQUIRED, DEFAULT) #NAME,
+//   ARGS_LIST
+// #undef ARG
+// };
+
+enum ArgsSequence {
+#define ARG(NAME, REQUIRED, DEFAULT) NAME,
   ARGS_LIST
 #undef ARG
+  ARGS_COUNT
 };
 
-AP_ATTRIBUTES Input parse_flags(int argc, char **argv, char *error_msg);
+AP_ATTRIBUTES Input parse_args(int argc, char **argv, char *error_msg);
 
 #ifdef __cplusplus
 }
@@ -117,8 +124,77 @@ AP_ATTRIBUTES int get_numeric_string_base(char *str) {
   }
 }
 
-AP_ATTRIBUTES Input parse_flags(int argc, char **argv, char *error_msg) {
+typedef struct {
+  char type;
+  union { bool b; int i; float f; char c; char * s; } value;
+} ArgValue;
+AP_ATTRIBUTES ArgValue __parse_arg(char *name, char *type, int argc, char **argv, int i, bool required) {
+  ArgValue ret = {0};
+  if (!strcmp(type, "none")) {
+    ret.value.b = true;
+		ret.type = 'b';
+    return ret;
+  }
+
+  if (argc < i + 2) {
+    if (required) {
+      fprintf(stderr, "ERROR: Expected argument for --%s", name);
+      exit(1);
+    }
+  } else if (!strcmp(type, "bool")) {
+
+    if (!strcmp(argv[i + 1], "true")) {
+      ret.value.b = true;
+      ret.type = 'b';
+    } else if (!strcmp(argv[i + 1], "false")) {
+      ret.value.b = false;
+      ret.type = 'b';
+    } else {
+      fprintf(stderr, "ERROR: Invalid argument %s, expected: %s", argv[i + 1], "bool");
+      exit(1);
+    }
+  } else if (!strcmp(type, "int")) {
+
+    int base = get_numeric_string_base(argv[i + 1]);
+    if (base <= 0) {
+      fprintf(stderr, "ERROR: Invalid argument %s, expected: %s", argv[i + 1], "int");
+      exit(1);
+    }
+    char *start = argv[i + 1];
+    ret.value.i = (int)strtol(start, NULL, base);
+    ret.type = 'i';
+    return ret;
+  } else if (!strcmp(type, "float")) {
+
+    char *endptr = NULL;
+    ret.value.f = strtof(argv[i + 1], &endptr);
+    ret.type = 'f';
+    if (ret.value.f == 0.0f && endptr == argv[i + 1]) {
+      fprintf(stderr, "ERROR: Invalid argument %s, expected: %s", argv[i + 1], "float");
+      exit(1);
+    };
+    return ret;
+
+  } else if (!strcmp(type, "char")) {
+
+    ret.value.c = argv[i + 1][0];
+    ret.type = 'c';
+    return ret;
+
+  } else if (!strcmp(type, "char *")) {
+
+    ret.value.s = argv[i + 1];
+    ret.type = 's';
+    return ret;
+
+  } else { assert(false && "UNRECHEABLE: no flag type"); }
+
+  return ret;
+}
+
+AP_ATTRIBUTES Input parse_args(int argc, char **argv, char *error_msg) {
   (void)error_msg;
+  int c = 0;
   Args args = {0};
   Flags ret = {0};
   struct Parsed_Args parsed = {0};
@@ -127,82 +203,20 @@ AP_ATTRIBUTES Input parse_flags(int argc, char **argv, char *error_msg) {
   FLAGS_LIST
 #undef FLAG
 
-#define FLAG(NAME, SF, TYPE, REQUIRED, DEFAULT)                                \
-  else if (!strcmp(argv[i], "--" #NAME) || !strcmp(argv[i], "-" #SF)) {        \
-    if (!strcmp(#TYPE, "none")) {                                              \
-      bool result = true;                                                      \
-      ret.NAME = *(TYPE *)&result;                                             \
-      parsed.NAME = true;                                                      \
-      continue;                                                                \
-    }                                                                          \
-                                                                               \
-    if (argc < i + 1) {                                                        \
-      if (REQUIRED) {                                                          \
-        fprintf(stderr, "ERROR: Expected argument for %s", "--" #NAME);        \
-        exit(1);                                                               \
-      }                                                                        \
-    } else if (!strcmp(#TYPE, "bool")) {                                       \
-                                                                               \
-      bool result = false;                                                     \
-                                                                               \
-      if (!strcmp(argv[i + 1], "true"))                                        \
-        result = true;                                                         \
-      else if (!strcmp(argv[i + 1], "false"))                                  \
-        result = false;                                                        \
-      else {                                                                   \
-        fprintf(stderr, "ERROR: Invalid argument %s, expected: %s",            \
-            argv[i + 1], "bool");                                              \
-        exit(1);                                                               \
-      }                                                                        \
-      ret.NAME = *(TYPE *)&result;                                             \
-      parsed.NAME = true;                                                      \
-      i++;                                                                     \
-                                                                               \
-    } else if (!strcmp(#TYPE, "int")) {                                        \
-                                                                               \
-      int base = get_numeric_string_base(argv[i + 1]);                         \
-      if (base <= 0) {                                                         \
-        fprintf(stderr, "ERROR: Invalid argument %s, expected: %s",            \
-            argv[i + 1], "int");                                               \
-        exit(1);                                                               \
-      }                                                                        \
-      char *start = argv[i + 1];                                               \
-      int r = (int)strtol(start, NULL, base);                                  \
-      ret.NAME = *(TYPE *)&r;                                                  \
-      parsed.NAME = true;                                                      \
-      i++;                                                                     \
-                                                                               \
-    } else if (!strcmp(#TYPE, "float")) {                                      \
-                                                                               \
-      char *endptr = NULL;                                                     \
-      float f = strtof(argv[i + 1], &endptr);                                  \
-      if (f == 0.0f && endptr == argv[i + 1]) {                                \
-        fprintf(stderr, "ERROR: Invalid argument %s, expected: %s",            \
-            argv[i + 1], "float");                                             \
-        exit(1);                                                               \
-      };                                                                       \
-      ret.NAME = *(TYPE *)&f;                                                  \
-      parsed.NAME = true;                                                      \
-      i++;                                                                     \
-                                                                               \
-    } else if (!strcmp(#TYPE, "char")) {                                       \
-                                                                               \
-      ret.NAME = *(TYPE *)&argv[i + 1][0];                                     \
-      parsed.NAME = true;                                                      \
-      i++;                                                                     \
-                                                                               \
-    } else if (!strcmp(#TYPE, "char *")) {                                     \
-                                                                               \
-      ret.NAME = *(TYPE *)&argv[i + 1];                                        \
-      parsed.NAME = true;                                                      \
-      i++;                                                                     \
-                                                                               \
-    } else {                                                                   \
-      assert(false && "UNRECHEABLE: no flag type");                                          \
-    }                                                                          \
+#define FLAG(NAME, SF, TYPE, REQUIRED, DEFAULT)                                         \
+  else if (!strcmp(argv[i], "--" #NAME) || !strcmp(argv[i], "-" #SF)) {                 \
+    ArgValue av = __parse_arg((char*)#NAME, (char*)#TYPE, argc, argv, i, REQUIRED);     \
+    switch (av.type) {                                                                  \
+      case 'b': ret.NAME = *(TYPE*)&av.value.b; break;                                  \
+      case 'i': ret.NAME = *(TYPE*)&av.value.i; break;                                  \
+      case 'f': ret.NAME = *(TYPE*)&av.value.f; break;                                  \
+      case 'c': ret.NAME = *(TYPE*)&av.value.c; break;                                  \
+      case 's': ret.NAME = *(TYPE*)&av.value.s; break;                                  \
+    };                                                                                  \
+    if(strcmp(#TYPE, "none")) ++i;                                                      \
+    parsed.NAME = true;                                                                 \
   }
 
-  
   args.exec_name = argv[0];
 
   for (int i = 1; i < argc; i++) {
@@ -213,7 +227,17 @@ AP_ATTRIBUTES Input parse_flags(int argc, char **argv, char *error_msg) {
         fprintf(stderr, "ERROR: unknown flag %s\n", argv[i]);
         exit(1);
       } else {
-        // push arg
+        if(c < ARGS_COUNT) {
+          switch(c) {
+#define ARG(NAME, REQUIRED, DEFAULT) case NAME: { args.NAME = argv[i]; } break;
+            ARGS_LIST
+#undef ARG
+          }
+          c++;
+        } else {
+          fprintf(stderr, "ERROR: unknown flag %s\n", argv[i]);
+          exit(1);
+        }
       }
     }
   }
@@ -227,6 +251,14 @@ AP_ATTRIBUTES Input parse_flags(int argc, char **argv, char *error_msg) {
   }
   FLAGS_LIST
 #undef FLAG
+
+#define ARG(NAME, REQUIRED, DEFAULT)                                     \
+  if (REQUIRED && args.NAME == NULL) {                                        \
+    fprintf(stderr, "ERROR: Flag --" #NAME " required but not found\n"); \
+    exit(1);                                                             \
+  }
+          ARGS_LIST
+#undef ARG
 
   return (Input){ .args = args, .flags = ret };
 }
