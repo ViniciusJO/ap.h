@@ -124,4 +124,5 @@ DDD:  1
 # TODO
 
 - [ ] usage and help functions
+- [ ] static and dynamic array of args
 
