@@ -1,3 +1,6 @@
+// TODO: add a enum type that especifies the possible variants
+// TODO: generate completions for zsh, bash and fish
+
 #ifndef __AP_H__
 #define __AP_H__
 #ifdef __cplusplus
@@ -21,32 +24,30 @@ extern "C" {
 
 typedef bool none;
 
-// typedef struct {
-// #ifdef FLAGS_LIST
-// #define FLAG(NAME, SF, TYPE, REQUIRED, DEFAULT, DESC) TYPE NAME;
-//   FLAGS_LIST
-// #undef FLAG
-// #endif//FLAGS_LIST
-// } Flags;
+#include <stdlib.h>
+#include "al.h"
 
-// struct ___Short_Flags {
-// #define FLAG(NAME, SF, TYPE, REQUIRED, DEFAULT, DESC) TYPE SF;
-//   FLAGS_LIST
-// #undef FLAG
-// };
+typedef struct {
+  char **items;
+  size_t count;
+  size_t capacity;
+} AP_extras;
 
 typedef struct {
   char *exec_name;
 #ifdef POS_ARGS_LIST
-#define POS_ARG(NAME, REQUIRED, DEFAULT, DESC) char *NAME;
+#define POS_ARG(NAME, REQUIRED, DEFAULT, DESC, ...) char *NAME;
   POS_ARGS_LIST
 #undef POS_ARG
 #endif//POS_ARGS_LIST
+#ifdef AP_ALLOW_EXTRAS
+  AP_extras extras;
+#endif//AP_ALLOW_EXTRAS
 } PosArgs;
 
 typedef struct {
 #ifdef FLAGS_LIST
-#define FLAG(NAME, SF, TYPE, REQUIRED, DEFAULT, DESC) TYPE NAME;
+#define FLAG(NAME, SF, TYPE, REQUIRED, DEFAULT, DESC, ...) TYPE NAME;
   FLAGS_LIST
 #undef FLAG
 #endif//FLAGS_LIST
@@ -54,13 +55,13 @@ typedef struct {
 } Args;
 
 // static const char ArgsSequence[] = {
-// #define POS_ARG(NAME, TYPE, REQUIRED, DEFAULT) #NAME,
+// #define POS_ARG(NAME, TYPE, REQUIRED, DEFAULT, ...) #NAME,
 //   POS_ARGS_LIST
 // #undef POS_ARG
 // };
 
 enum ArgsSequence {
-#define POS_ARG(NAME, REQUIRED, DEFAULT, DESC) NAME,
+#define POS_ARG(NAME, REQUIRED, DEFAULT, DESC, ...) NAME,
   POS_ARGS_LIST
 #undef POS_ARG
   ARGS_COUNT
@@ -74,7 +75,7 @@ AP_ATTRIBUTES Args ap_parse_args(int argc, char **argv);
 #endif //__cplusplus
 #endif //__AP_H__
 
-#define AP_IMPLEMENTATIONS
+// #define AP_IMPLEMENTATIONS
 #ifdef AP_IMPLEMENTATIONS
 #ifndef __AP_IMP__
 #define __AP_IMP__
@@ -84,7 +85,6 @@ extern "C" {
 
 #include <assert.h>
 #include <stddef.h>
-#include <stdlib.h>
 #include <string.h>
 
 // usage: ./bin 
@@ -94,43 +94,44 @@ AP_ATTRIBUTES void ap_usage(FILE *fd) {
 
   fprintf(fd, "Usage: " __FILE_NAME__ " ");
 
-#define POS_ARG(NAME, REQUIRED, DEFAULT, DESC) if(strlen(#NAME) > max_pa_name) max_pa_name = strlen(#NAME);
+#define POS_ARG(NAME, REQUIRED, DEFAULT, DESC, ...) if(strlen(#NAME) > max_pa_name) max_pa_name = strlen(#NAME);
   POS_ARGS_LIST
 #undef POS_ARG
 
 #define HAS_SF(SF) (strcmp(SF, "-") && strlen(SF) > 0)
-#define FLAG(NAME, SF, TYPE, REQUIRED, DEFAULT, DESC) if(REQUIRED) fprintf(fd, "--%s <%s> ", \
-  #NAME, \
-  #NAME \
+#define FLAG(NAME, SF, TYPE, REQUIRED, DEFAULT, DESC, ...) if(REQUIRED) fprintf(fd, "--%s <%s> ",                        \
+  #NAME,                                                                                                                 \
+  #NAME                                                                                                                  \
 );
   FLAGS_LIST
 #undef FLAG
 #undef HAS_SF
 
-#define POS_ARG(NAME, REQUIRED, DEFAULT, DESC) fprintf(fd, "%c%s%c ", REQUIRED ? '<' : '[', #NAME, REQUIRED ? '>' : ']');
+#define POS_ARG(NAME, REQUIRED, DEFAULT, DESC, ...) fprintf(fd, "%c%s%c ", REQUIRED ? '<' : '[', #NAME, REQUIRED ? '>' : ']');
   POS_ARGS_LIST
 #undef POS_ARG
   fprintf(fd, "\n\nArguments:\n");
 
 
-#define POS_ARG(NAME, REQUIRED, DEFAULT, DESC) fprintf(fd, "\t%c%s%c%.*s\t\t%s %s%s%c\n", \
-  REQUIRED ? '<' : '[', #NAME , REQUIRED ? '>' : ']', (int)(max_pa_name - strlen(#NAME)), "", \
-  DESC, strlen(#DEFAULT) == 0 ? "" : "(default: ", #DEFAULT, strlen(#DEFAULT) == 0 ? ' ' : ')' \
+#define POS_ARG(NAME, REQUIRED, DEFAULT, DESC, ...) fprintf(fd, "\t%c%s%c%.*s\t\t%s %s%s%c\n",                           \
+  REQUIRED ? '<' : '[', #NAME , REQUIRED ? '>' : ']', (int)(max_pa_name - strlen(#NAME)), "",                            \
+  DESC, strlen(#DEFAULT) == 0 ? "" : "(default: ", #DEFAULT, strlen(#DEFAULT) == 0 ? ' ' : ')'                           \
 );
   POS_ARGS_LIST
 #undef POS_ARG
   fprintf(fd, "\nFlags:\n");
 
 
-#define FLAG(NAME, SF, TYPE, REQUIRED, DEFAULT, DESC) if(strlen(#NAME) > max_flag_name) max_flag_name = strlen(#NAME); if(strlen(#SF) > max_sf) max_sf = strlen(#SF);
+#define FLAG(NAME, SF, TYPE, REQUIRED, DEFAULT, DESC, ...) if(strlen(#NAME) > max_flag_name) max_flag_name = strlen(#NAME); if(strlen(#SF) > max_sf) max_sf = strlen(#SF);
   FLAGS_LIST
 #undef FLAG
 
-#define FLAG(NAME, SF, TYPE, REQUIRED, DEFAULT, DESC) fprintf(fd, "\t%c%-*s%c --%-*s\t\t%s %s%s%c\n", \
+#define FLAG(NAME, SF, TYPE, REQUIRED, DEFAULT, DESC, ...) fprintf(fd, "\t%c%-*s%c --%-*s\t\t%s %s%s%c\t<%s>\n",         \
   !strcmp(#SF, "-") || strlen(#SF) == 0 ? ' ' : '-', (int)max_sf, #SF, !strcmp(#SF, "-") || strlen(#SF) == 0 ? ' ' : ',',\
-  (int)max_flag_name, #NAME, \
-  DESC, \
-  strlen(#DEFAULT) == 0 ? "" : "(default: ", #DEFAULT, strlen(#DEFAULT) == 0 ? ' ' : ')' \
+  (int)max_flag_name, #NAME,                                                                                             \
+  DESC,                                                                                                                  \
+  strlen(#DEFAULT) == 0 ? "" : "(default: ", #DEFAULT, strlen(#DEFAULT) == 0 ? ' ' : ')',                                \
+  (!strcmp(#TYPE, "char*") || !strcmp(#TYPE, "char *")) ? "string" : #TYPE                                               \
 );
   FLAGS_LIST
 #undef FLAG
@@ -139,14 +140,14 @@ AP_ATTRIBUTES void ap_usage(FILE *fd) {
 }
 
 struct Parsed_Args {
-#define FLAG(NAME, SF, TYPE, REQUIRED, DEFAULT, DESC) bool NAME;
+#define FLAG(NAME, SF, TYPE, REQUIRED, DEFAULT, DESC, ...) bool NAME;
   FLAGS_LIST
 #undef FLAG
 };
 
 #define IS_NUM(C) ((C) >= '0' && (C) <= '9')
-#define IS_HEX(C)                                                              \
-  (((C) >= '0' && (C) <= '9') || ((C) >= 'a' && (C) <= 'f') ||                 \
+#define IS_HEX(C)                                                                                                        \
+  (((C) >= '0' && (C) <= '9') || ((C) >= 'a' && (C) <= 'f') ||                                                           \
    ((C) >= 'A' && (C) <= 'F'))
 #define IS_BIN(C) ((C) == '0' || (C) == '1')
 #define IS_OCT(C) ((C) >= '0' && (C) <= '7')
@@ -188,14 +189,15 @@ typedef struct {
   char type;
   union { bool b; int i; float f; char c; char * s; } value;
 } ArgValue;
+
 AP_ATTRIBUTES ArgValue __parse_arg(char *name, char *type, int argc, char **argv, int i, bool required) {
   ArgValue ret = {0};
   if (!strcmp(type, "none")) {
     ret.value.b = true;
-		ret.type = 'b';
+    ret.type = 'b';
     return ret;
   }
-if (argc < i + 2) {
+  if (argc < i + 2) {
     if (required) {
       fprintf(stderr, "ERROR: Expected argument for --%s\n\n", name);
       ap_usage(stderr);
@@ -261,46 +263,53 @@ AP_ATTRIBUTES Args ap_parse_args(int argc, char **argv) {
   Args ret = {0};
   struct Parsed_Args parsed = {0};
 
-#define FLAG(NAME, SF, TYPE, REQUIRED, DEFAULT, DESC) ret.NAME = (TYPE)DEFAULT;
+  // defaults
+#define FLAG(NAME, SF, TYPE, REQUIRED, DEFAULT, DESC, ...) ret.NAME = (TYPE)DEFAULT;
   FLAGS_LIST
 #undef FLAG
 
-#define FLAG(NAME, SF, TYPE, REQUIRED, DEFAULT, DESC)                                         \
-  else if (!strcmp(argv[i], "--" #NAME) || !strcmp(argv[i], "-" #SF)) {                 \
-    ArgValue av = __parse_arg((char*)#NAME, (char*)#TYPE, argc, argv, i, REQUIRED);     \
-    switch (av.type) {                                                                  \
-      case 'b': ret.NAME = *(TYPE*)&av.value.b; break;                                  \
-      case 'i': ret.NAME = *(TYPE*)&av.value.i; break;                                  \
-      case 'f': ret.NAME = *(TYPE*)&av.value.f; break;                                  \
-      case 'c': ret.NAME = *(TYPE*)&av.value.c; break;                                  \
-      case 's': ret.NAME = *(TYPE*)&av.value.s; break;                                  \
-    };                                                                                  \
-    if(strcmp(#TYPE, "none")) ++i;                                                      \
-    parsed.NAME = true;                                                                 \
+#define FLAG(NAME, SF, TYPE, REQUIRED, DEFAULT, DESC, ...)                                                               \
+  else if (!options_terminated && (!strcmp(argv[i], "--" #NAME) || !strcmp(argv[i], "-" #SF))) {                         \
+    ArgValue av = __parse_arg((char*)#NAME, (char*)#TYPE, argc, argv, i, REQUIRED);                                      \
+    switch (av.type) {                                                                                                   \
+      case 'b': ret.NAME = *(TYPE*)&av.value.b; break;                                                                   \
+      case 'i': ret.NAME = *(TYPE*)&av.value.i; break;                                                                   \
+      case 'f': ret.NAME = *(TYPE*)&av.value.f; break;                                                                   \
+      case 'c': ret.NAME = *(TYPE*)&av.value.c; break;                                                                   \
+      case 's': ret.NAME = *(TYPE*)&av.value.s; break;                                                                   \
+    };                                                                                                                   \
+    if(strcmp(#TYPE, "none")) ++i;                                                                                       \
+    parsed.NAME = true;                                                                                                  \
   }
 
   ret.pos_args.exec_name = argv[0];
 
+  bool options_terminated = false;
+
   for (int i = 1; i < argc; i++) {
-    if (false) assert(false && "UNRECHEABLE");
+    if(!options_terminated && !strcmp("--", argv[i])) options_terminated = true;
     FLAGS_LIST
     else {
-      if(argv[i][0] == '-' && !IS_NUM(argv[i][1])) {
+      if(!options_terminated && argv[i][0] == '-' && !IS_NUM(argv[i][1])) {
         fprintf(stderr, "ERROR: unknown flag %s\n\n", argv[i]);
         ap_usage(stderr);
         exit(1);
-      } else {
+      } else { // POSITIONAL
         if(c < ARGS_COUNT) {
           switch(c) {
-#define POS_ARG(NAME, REQUIRED, DEFAULT, DESC) case NAME: { ret.pos_args.NAME = argv[i]; } break;
+#define POS_ARG(NAME, REQUIRED, DEFAULT, DESC, ...) case NAME: { ret.pos_args.NAME = argv[i]; } break;
             POS_ARGS_LIST
 #undef POS_ARG
           }
           c++;
         } else {
-          fprintf(stderr, "ERROR: unknown flag %s\n\n", argv[i]);
+#ifdef AP_ALLOW_EXTRAS
+          al_append(&ret.pos_args.extras, argv[i]);
+#else
+          fprintf(stderr, "ERROR: unknown argument %s\n\n", argv[i]);
           ap_usage(stderr);
           exit(1);
+#endif
         }
       }
     }
@@ -308,23 +317,23 @@ AP_ATTRIBUTES Args ap_parse_args(int argc, char **argv) {
 
 #undef FLAG
 
-#define FLAG(NAME, SF, TYPE, REQUIRED, DEFAULT, DESC)                                \
-  if (REQUIRED && !parsed.NAME) {                                              \
-    fprintf(stderr, "ERROR: Flag --" #NAME " required but not found\n\n");                \
-    ap_usage(stderr); \
-    exit(1);                                                                   \
+#define FLAG(NAME, SF, TYPE, REQUIRED, DEFAULT, DESC, ...)                                                               \
+  if (REQUIRED && !parsed.NAME) {                                                                                        \
+    fprintf(stderr, "ERROR: Flag --" #NAME " required but not found\n\n");                                               \
+    ap_usage(stderr);                                                                                                    \
+    exit(1);                                                                                                             \
   }
   FLAGS_LIST
 #undef FLAG
 
   c = 0;
-#define POS_ARG(NAME, REQUIRED, DEFAULT, DESC) if (REQUIRED) {                                \
-  if(ret.pos_args.NAME == NULL) {                                                               \
-    fprintf(stderr, "ERROR: Positional arg <" #NAME "> (%d) required but not found\n\n", c); \
-    ap_usage(stderr); \
-    exit(1);                                                                            \
-  }                                                                                     \
-  c++;                                                                                  \
+#define POS_ARG(NAME, REQUIRED, DEFAULT, DESC, ...) if (REQUIRED) {                                                      \
+  if(ret.pos_args.NAME == NULL) {                                                                                        \
+    fprintf(stderr, "ERROR: Positional arg <" #NAME "> (%d) required but not found\n\n", c);                             \
+    ap_usage(stderr);                                                                                                    \
+    exit(1);                                                                                                             \
+  }                                                                                                                      \
+  c++;                                                                                                                   \
 } else goto unrequired;
   POS_ARGS_LIST
 #undef POS_ARG
@@ -333,7 +342,8 @@ unrequired:
   for (int i = c; i < ARGS_COUNT; ++i) {
     // printf("%d: ---------------\n", i);
     switch(i) {
-#define POS_ARG(NAME, REQUIRED, DEFAULT, DESC) case NAME: { if(ret.pos_args.NAME == NULL && DEFAULT) ret.pos_args.NAME = DEFAULT; } break;
+#define POS_ARG(NAME, REQUIRED, DEFAULT, DESC, ...)                                                                      \
+      case NAME: { if(ret.pos_args.NAME == NULL && DEFAULT) ret.pos_args.NAME = DEFAULT; } break;
       POS_ARGS_LIST
 #undef POS_ARG
     }

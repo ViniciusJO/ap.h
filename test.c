@@ -10,12 +10,13 @@
   POS_ARG(phone, false, "-", "Phone number")         \
   POS_ARG(type, false, "commercial", "Type of contact") 
 
+#define AP_ALLOW_EXTRAS
 #define AP_IMPLEMENTATIONS
 #include "ap.h"
 
 #include <stdio.h>
 
-int main(int argc, char **argv) {
+Args tests(int argc, char **argv) {
   Args args = ap_parse_args(argc, argv);
 
   printf("exec_name: %s\n\n", args.pos_args.exec_name);
@@ -23,12 +24,24 @@ int main(int argc, char **argv) {
   printf("[POSITIONAL ARGS]\n");
   printf("name: %s\n", args.pos_args.name);
   printf("phone: %s\n", args.pos_args.phone);
-  printf("type: %s\n\n", args.pos_args.type);
+  printf("type: %s\n", args.pos_args.type);
+#ifdef AP_ALLOW_EXTRAS
+  printf("extras: ");
+  // al_foreach(i, &args.pos_args.extras) {
+  //   printf("\t[%ld]: %s\n", i_idx, *i);
+  // };
+  al_print(&args.pos_args.extras, "\n");
+#endif//AP_ALLOW_EXTRAS
+  printf("\n");
 
   printf("[FLAGS]\n");
   printf("contact_list: %s\n", args.contact_list);
   printf("local:  %s\n", args.local);
   printf("DDD:  %d\n", args.DDD);
+  return args;
+}
 
+int main(int argc, char **argv) {
+  tests(argc, argv);
   return 0;
 }
