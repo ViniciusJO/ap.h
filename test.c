@@ -1,16 +1,14 @@
-// FLAG(NAME, SHORT_FORM, TYPE, REQUIRED, DEFAULT_VALUE, DESCRIPTION, __VARIADIC_VARIANTS__)
+// FLAG(NAME, SHORT_FORM, TYPE, REQUIRED, DEFAULT_VALUE, DESCRIPTION, ...VARIANTS)
 #define FLAGS_LIST(FLAG)                                                                      \
   FLAG(local, l, char*, true, "", "Location")                                                 \
   FLAG(contact_list, cl, char *, false, "default", "Contact list name")                       \
-  FLAG(DDD, , int, false, 1, "Direct distance dialing code", 318, 350)                        \
-  FLAG(x, , int, false, 0, "Direct distance dialing code")
+  FLAG(DDD, , int, false, 11, "Direct distance dialing code", 31, 11, 95)
 
-// POS_ARG(NAME, REQUIRED, DEFAULT_VALUE, DESCRIPTION, __VARIADIC_VARIANTS__)
+// POS_ARG(NAME, REQUIRED, DEFAULT_VALUE, DESCRIPTION, ...VARIANTS)
 #define POS_ARGS_LIST(POS_ARG)                                                                \
   POS_ARG(name, true, "", "Contact name")                                                     \
   POS_ARG(phone, false, "-", "Phone number")                                                  \
-  POS_ARG(type, false, "commercial", "Type of contact", commercial, personal, organizational) \
-  POS_ARG(subcommand, false, "help", "Subcmd", A,B,C,D) 
+  POS_ARG(type, false, "commercial", "Type of contact", commercial, personal, organizational)
 
 #define AP_ALLOW_EXTRAS
 #define AP_IMPLEMENTATIONS
@@ -30,7 +28,6 @@ Args tests(int argc, char **argv) {
   printf("name: %s\n", args.pos_args.name);
   printf("phone: %s\n", args.pos_args.phone);
   printf("type: %s\n", args.pos_args.type);
-  printf("subcommand: %s\n", args.pos_args.subcommand);
 #ifdef AP_ALLOW_EXTRAS
   printf("extras: ");
   al_print(&args.pos_args.extras, "\n");
@@ -46,6 +43,5 @@ Args tests(int argc, char **argv) {
 
 int main(int argc, char **argv) {
   tests(argc, argv);
-  // ap_completions(stdout);
   return 0;
 }

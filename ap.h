@@ -7,14 +7,14 @@
 
     // FLAG(NAME, SHORT_FORM, TYPE, REQUIRED, DEFAULT, DESCRIPTION, ...VARIANTS)
     #define FLAGS_LIST(FLAG)                                              \
-      FLAG(verbose, v, bool, false, false, "Enable verbose output")      \
-      FLAG(config, c, char*, false, "config.ini", "Config file path")    \
-      FLAG(threads, t, int, false, 4, "Number of threads")              \
+      FLAG(verbose, v, bool, false, false, "Enable verbose output")       \
+      FLAG(config, c, char*, false, "config.ini", "Config file path")     \
+      FLAG(threads, t, int, false, 4, "Number of threads")                \
       FLAG(mode, m, char*, false, "fast", "Run mode", fast, safe, debug)
 
     // POS_ARG(NAME, REQUIRED, DEFAULT, DESCRIPTION, ...VARIANTS)
-    #define POS_ARGS_LIST(POS_ARG)                                       \
-      POS_ARG(input, true, "", "Input file")                             \
+    #define POS_ARGS_LIST(POS_ARG)                                        \
+      POS_ARG(input, true, "", "Input file")                              \
       POS_ARG(output, false, "out.txt", "Output file")
 
   2. Include the header and parse:
@@ -407,7 +407,7 @@ AP_ATTRIBUTES void ap_completions_fish(FILE *fd);
 #endif //__cplusplus
 #endif //__AP_H__
 
-#define AP_IMPLEMENTATIONS
+// #define AP_IMPLEMENTATIONS
 #ifdef AP_IMPLEMENTATIONS
 #ifndef __AP_IMP__
 #define __AP_IMP__
@@ -475,8 +475,8 @@ AP_ATTRIBUTES void ap_usage(FILE *fd) {
 #undef POS_ARG
 
 #define HAS_SF(SF) (strcmp(SF, "-") && strlen(SF) > 0)
-#define FLAG(NAME, SF, TYPE, REQUIRED, DEFAULT, DESC, ...) if(REQUIRED) fprintf(fd, "--%s <%s> ",                         \
-  #NAME, #NAME                                                                                             \
+#define FLAG(NAME, SF, TYPE, REQUIRED, DEFAULT, DESC, ...) if(REQUIRED) fprintf(fd, "--%s <%s> ",                                          \
+  #NAME, #NAME                                                                                                                             \
 );
   FLAGS_LIST(FLAG)
 #undef FLAG
@@ -489,10 +489,10 @@ AP_ATTRIBUTES void ap_usage(FILE *fd) {
   fprintf(fd, "\n\nArguments:\n");
 
 
-#define POS_ARG(NAME, REQUIRED, DEFAULT, DESC, ...) fprintf(fd, "\t%c%s%c%-*s  %s%s%s\n",                         \
-  REQUIRED ? '<' : '[', #NAME , REQUIRED ? '>' : ']', (int)(max_pa_name - strlen(#NAME)+1), "",                             \
-  DESC, strlen(#DEFAULT) != 0 ? "  (default: " #DEFAULT ")" : "",                           \
-  (0 != strlen(#__VA_ARGS__)) ? "  (variants: " #__VA_ARGS__ ")": ""                                                        \
+#define POS_ARG(NAME, REQUIRED, DEFAULT, DESC, ...) fprintf(fd, "\t%c%s%c%-*s  %s%s%s\n",                                                  \
+  REQUIRED ? '<' : '[', #NAME , REQUIRED ? '>' : ']', (int)(max_pa_name - strlen(#NAME)+1), "",                                            \
+  DESC, strlen(#DEFAULT) != 0 ? "  (default: " #DEFAULT ")" : "",                                                                          \
+  (0 != strlen(#__VA_ARGS__)) ? "  (variants: " #__VA_ARGS__ ")": ""                                                                       \
 );
   POS_ARGS_DEFAULT_LIST
   POS_ARGS_LIST(POS_ARG)
@@ -506,20 +506,20 @@ AP_ATTRIBUTES void ap_usage(FILE *fd) {
 #undef FLAG
 
   size_t typename_len = 0;
-#define FLAG(NAME, SF, TYPE, REQUIRED, DEFAULT, DESC, ...) \
+#define FLAG(NAME, SF, TYPE, REQUIRED, DEFAULT, DESC, ...)                                                                                 \
   typename_len = strlen((!strcmp(#TYPE, "char*") || !strcmp(#TYPE, "char *")) ? "<string>" : !strcmp(#TYPE, "none") ? "" : "<" #TYPE ">"); \
   if(typename_len > max_typename) max_typename = typename_len;
   FLAGS_LIST(FLAG)
 #undef FLAG
 
-#define FLAG(NAME, SF, TYPE, REQUIRED, DEFAULT, DESC, ...) fprintf(fd, "\t%c%-*s%c --%-*s  %-*s  %s %s%s%c %s\n",          \
-  !strcmp(#SF, "-") || strlen(#SF) == 0 ? ' ' : '-', (int)max_sf, #SF, !strcmp(#SF, "-") || strlen(#SF) == 0 ? ' ' : ',', \
-  (int)max_flag_name, #NAME,                                                                                              \
-  (int)max_typename, \
-  (!strcmp(#TYPE, "char*") || !strcmp(#TYPE, "char *")) ? "<string>" : !strcmp(#TYPE, "none") ? "" : "<" #TYPE ">",                                               \
-  DESC,                                                                                                                   \
-  strlen(#DEFAULT) == 0 ? "" : "(default: ", #DEFAULT, strlen(#DEFAULT) == 0 ? ' ' : ')',                                 \
-  (0 != strlen(#__VA_ARGS__)) ? "(variants: " #__VA_ARGS__ ")": ""                                                        \
+#define FLAG(NAME, SF, TYPE, REQUIRED, DEFAULT, DESC, ...) fprintf(fd, "\t%c%-*s%c --%-*s  %-*s  %s %s%s%c %s\n",                          \
+  !strcmp(#SF, "-") || strlen(#SF) == 0 ? ' ' : '-', (int)max_sf, #SF, !strcmp(#SF, "-") || strlen(#SF) == 0 ? ' ' : ',',                  \
+  (int)max_flag_name, #NAME,                                                                                                               \
+  (int)max_typename,                                                                                                                       \
+  (!strcmp(#TYPE, "char*") || !strcmp(#TYPE, "char *")) ? "<string>" : !strcmp(#TYPE, "none") ? "" : "<" #TYPE ">",                        \
+  DESC,                                                                                                                                    \
+  strlen(#DEFAULT) == 0 ? "" : "(default: ", #DEFAULT, strlen(#DEFAULT) == 0 ? ' ' : ')',                                                  \
+  (0 != strlen(#__VA_ARGS__)) ? "(variants: " #__VA_ARGS__ ")": ""                                                                         \
 );
   FLAGS_DEFAULT_LIST(FLAG)
   FLAGS_LIST(FLAG)
@@ -557,12 +557,12 @@ AP_ATTRIBUTES void ap_completions_zsh(FILE *fd) {
 
   #define HAS_VARIANTS(VA) (VA && 0 != strlen(VA))
   #define HAS_SF(SF) (strlen(#SF) > 0 && strcmp(#SF, "-"))
-  #define FLAG(NAME, SF, TYPE, REQUIRED, DEFAULT, DESC, ...) fprintf(fd, "\t\t%s%s" #NAME ":%s%s%s' \\\n",         \
-     (HAS_SF(SF)) ? "'(-" #SF " --" #NAME ")'{-" #SF ",--" #NAME "}'" : "'--" #NAME,              \
-     (strlen(DESC) > 0) ? "[" DESC "]:"  : "", \
-     HAS_VARIANTS(#__VA_ARGS__) ? "(" : "", \
-     HAS_VARIANTS(#__VA_ARGS__) ? ap_coma_to_space_separeted_list(#__VA_ARGS__) : "", \
-     HAS_VARIANTS(#__VA_ARGS__) ? ")" : "" \
+  #define FLAG(NAME, SF, TYPE, REQUIRED, DEFAULT, DESC, ...) fprintf(fd, "\t\t%s%s" #NAME ":%s%s%s' \\\n",                                 \
+     (HAS_SF(SF)) ? "'(-" #SF " --" #NAME ")'{-" #SF ",--" #NAME "}'" : "'--" #NAME,                                                       \
+     (strlen(DESC) > 0) ? "[" DESC "]:"  : "",                                                                                             \
+     HAS_VARIANTS(#__VA_ARGS__) ? "(" : "",                                                                                                \
+     HAS_VARIANTS(#__VA_ARGS__) ? ap_coma_to_space_separeted_list(#__VA_ARGS__) : "",                                                      \
+     HAS_VARIANTS(#__VA_ARGS__) ? ")" : ""                                                                                                 \
   );
     FLAGS_LIST(FLAG)
   #undef FLAG
@@ -578,11 +578,11 @@ AP_ATTRIBUTES void ap_completions_zsh(FILE *fd) {
 
   fprintf(fd, "\n\tcase $state in\n");
 
-#define POS_ARG(NAME, REQUIRED, DEFAULT, DESC, ...) fprintf(fd, "\t\t" #NAME ")\n\t\t\t%s %s\n\t\t\treturn\n\t\t\t;;\n\n", \
-  HAS_VARIANTS(#__VA_ARGS__) \
-    ? ((0 != strlen(DESC)) ? "_values '" DESC "'" : "_values '" #NAME "'") \
-    : ((0 != strlen(DESC)) ? "_message '" DESC "'" : ""), \
-    ap_coma_to_space_separeted_list(#__VA_ARGS__) \
+#define POS_ARG(NAME, REQUIRED, DEFAULT, DESC, ...) fprintf(fd, "\t\t" #NAME ")\n\t\t\t%s %s\n\t\t\treturn\n\t\t\t;;\n\n",                 \
+  HAS_VARIANTS(#__VA_ARGS__)                                                                                                               \
+    ? ((0 != strlen(DESC)) ? "_values '" DESC "'" : "_values '" #NAME "'")                                                                 \
+    : ((0 != strlen(DESC)) ? "_message '" DESC "'" : ""),                                                                                  \
+    ap_coma_to_space_separeted_list(#__VA_ARGS__)                                                                                          \
 );
   POS_ARGS_LIST(POS_ARG)
 #undef POS_ARG
@@ -601,20 +601,20 @@ AP_ATTRIBUTES void ap_completions_bash(FILE *fd) {
   fprintf(fd, "\tcase \"$prev\" in\n");
 #define HAS_VARIANTS(VA) (VA && 0 != strlen(VA))
 #define HAS_SF(SF) (strlen(#SF) > 0 && strcmp(#SF, "-"))
-#define FLAG(NAME, SF, TYPE, REQUIRED, DEFAULT, DESC, ...) \
-  if (HAS_VARIANTS(#__VA_ARGS__)) { \
-    fprintf(fd, "\t\t--" #NAME); \
-    if (HAS_SF(SF)) fprintf(fd, "|-" #SF); \
-    fprintf(fd, ")\n"); \
-    fprintf(fd, "\t\t\tCOMPREPLY=($(compgen -W '"); \
-    { \
-      Variants _vs = ap_split_string(#__VA_ARGS__); \
-      al_foreach(_v, &_vs) fprintf(fd, "%s ", *_v); \
-      al_free(&_vs); \
-    } \
-    fprintf(fd, "' -- \"$cur\"))\n"); \
-    fprintf(fd, "\t\t\treturn\n"); \
-    fprintf(fd, "\t\t\t;;\n"); \
+#define FLAG(NAME, SF, TYPE, REQUIRED, DEFAULT, DESC, ...)                                                                                 \
+  if (HAS_VARIANTS(#__VA_ARGS__)) {                                                                                                        \
+    fprintf(fd, "\t\t--" #NAME);                                                                                                           \
+    if (HAS_SF(SF)) fprintf(fd, "|-" #SF);                                                                                                 \
+    fprintf(fd, ")\n");                                                                                                                    \
+    fprintf(fd, "\t\t\tCOMPREPLY=($(compgen -W '");                                                                                        \
+    {                                                                                                                                      \
+      Variants _vs = ap_split_string(#__VA_ARGS__);                                                                                        \
+      al_foreach(_v, &_vs) fprintf(fd, "%s ", *_v);                                                                                        \
+      al_free(&_vs);                                                                                                                       \
+    }                                                                                                                                      \
+    fprintf(fd, "' -- \"$cur\"))\n");                                                                                                      \
+    fprintf(fd, "\t\t\treturn\n");                                                                                                         \
+    fprintf(fd, "\t\t\t;;\n");                                                                                                             \
   }
   FLAGS_LIST(FLAG)
 #undef FLAG
@@ -633,15 +633,15 @@ AP_ATTRIBUTES void ap_completions_bash(FILE *fd) {
   fprintf(fd, "\t\tcase \"${words[i]}\" in\n");
 
 #define HAS_SF(SF) (strlen(#SF) > 0 && strcmp(#SF, "-"))
-#define FLAG(NAME, SF, TYPE, REQUIRED, DEFAULT, DESC, ...) \
-  if (strcmp(#TYPE, "none")) { \
-    fprintf(fd, "\t\t\t--" #NAME); \
-    if (HAS_SF(SF)) fprintf(fd, "|-" #SF); \
-    fprintf(fd, ") skip_next=1 ;;\n"); \
-  } else { \
-    fprintf(fd, "\t\t\t--" #NAME); \
-    if (HAS_SF(SF)) fprintf(fd, "|-" #SF); \
-    fprintf(fd, ") ;;\n"); \
+#define FLAG(NAME, SF, TYPE, REQUIRED, DEFAULT, DESC, ...)                                                                                 \
+  if (strcmp(#TYPE, "none")) {                                                                                                             \
+    fprintf(fd, "\t\t\t--" #NAME);                                                                                                         \
+    if (HAS_SF(SF)) fprintf(fd, "|-" #SF);                                                                                                 \
+    fprintf(fd, ") skip_next=1 ;;\n");                                                                                                     \
+  } else {                                                                                                                                 \
+    fprintf(fd, "\t\t\t--" #NAME);                                                                                                         \
+    if (HAS_SF(SF)) fprintf(fd, "|-" #SF);                                                                                                 \
+    fprintf(fd, ") ;;\n");                                                                                                                 \
   }
   FLAGS_LIST(FLAG)
 #undef FLAG
@@ -656,19 +656,19 @@ AP_ATTRIBUTES void ap_completions_bash(FILE *fd) {
   fprintf(fd, "\tcase \"$pos_count\" in\n");
   {
     int idx = 0;
-#define POS_ARG(NAME, REQUIRED, DEFAULT, DESC, ...) \
-    fprintf(fd, "\t\t%d) # " #NAME ": " DESC "\n", idx++); \
-    if (HAS_VARIANTS(#__VA_ARGS__)) { \
-      fprintf(fd, "\t\t\tCOMPREPLY=($(compgen -W '"); \
-      { \
-        Variants _vs = ap_split_string(#__VA_ARGS__); \
-        al_foreach(_v, &_vs) fprintf(fd, "%s ", *_v); \
-        al_free(&_vs); \
-      } \
-      fprintf(fd, "' -- \"$cur\"))\n"); \
-    } else { \
-      fprintf(fd, "\t\t\tCOMPREPLY=()\n"); \
-    } \
+#define POS_ARG(NAME, REQUIRED, DEFAULT, DESC, ...)                                                                                        \
+    fprintf(fd, "\t\t%d) # " #NAME ": " DESC "\n", idx++);                                                                                 \
+    if (HAS_VARIANTS(#__VA_ARGS__)) {                                                                                                      \
+      fprintf(fd, "\t\t\tCOMPREPLY=($(compgen -W '");                                                                                      \
+      {                                                                                                                                    \
+        Variants _vs = ap_split_string(#__VA_ARGS__);                                                                                      \
+        al_foreach(_v, &_vs) fprintf(fd, "%s ", *_v);                                                                                      \
+        al_free(&_vs);                                                                                                                     \
+      }                                                                                                                                    \
+      fprintf(fd, "' -- \"$cur\"))\n");                                                                                                    \
+    } else {                                                                                                                               \
+      fprintf(fd, "\t\t\tCOMPREPLY=()\n");                                                                                                 \
+    }                                                                                                                                      \
     fprintf(fd, "\t\t\t;;\n");
     POS_ARGS_LIST(POS_ARG)
 #undef POS_ARG
@@ -680,8 +680,8 @@ AP_ATTRIBUTES void ap_completions_bash(FILE *fd) {
   fprintf(fd, "\t\tCOMPREPLY=($(compgen -W '");
 
 #define HAS_SF(SF) (strlen(#SF) > 0 && strcmp(#SF, "-"))
-#define FLAG(NAME, SF, TYPE, REQUIRED, DEFAULT, DESC, ...) \
-  fprintf(fd, "--" #NAME " "); \
+#define FLAG(NAME, SF, TYPE, REQUIRED, DEFAULT, DESC, ...)                                                                                 \
+  fprintf(fd, "--" #NAME " ");                                                                                                             \
   if (HAS_SF(SF)) fprintf(fd, "-" #SF " ");
   FLAGS_LIST(FLAG)
 #undef FLAG
@@ -707,21 +707,21 @@ AP_ATTRIBUTES void ap_completions_fish(FILE *fd) {
   // Flags
 #define HAS_SF(SF) (strlen(#SF) > 0 && strcmp(#SF, "-"))
 #define HAS_VARIANTS(VA) (VA && 0 != strlen(VA))
-#define FLAG(NAME, SF, TYPE, REQUIRED, DEFAULT, DESC, ...) \
-  fprintf(fd, "complete -c %s", exec_name); \
-  if (HAS_SF(SF)) fprintf(fd, " -s " #SF); \
-  fprintf(fd, " -l " #NAME); \
-  if (strcmp(#TYPE, "none")) fprintf(fd, " -r"); \
-  if (strlen(DESC) > 0) fprintf(fd, " -d '%s'", DESC); \
-  fprintf(fd, "\n"); \
-  if (HAS_VARIANTS(#__VA_ARGS__) && strcmp(#TYPE, "none")) { \
-    Variants _vs = ap_split_string(#__VA_ARGS__); \
-    al_foreach(_v, &_vs) { \
-      fprintf(fd, "complete -c %s -n '__fish_seen_argument -l " #NAME, exec_name); \
-      if (HAS_SF(SF)) fprintf(fd, " -s " #SF); \
-      fprintf(fd, "' -a '%s'\n", *_v); \
-    } \
-    al_free(&_vs); \
+#define FLAG(NAME, SF, TYPE, REQUIRED, DEFAULT, DESC, ...)                                                                                 \
+  fprintf(fd, "complete -c %s", exec_name);                                                                                                \
+  if (HAS_SF(SF)) fprintf(fd, " -s " #SF);                                                                                                 \
+  fprintf(fd, " -l " #NAME);                                                                                                               \
+  if (strcmp(#TYPE, "none")) fprintf(fd, " -r");                                                                                           \
+  if (strlen(DESC) > 0) fprintf(fd, " -d '%s'", DESC);                                                                                     \
+  fprintf(fd, "\n");                                                                                                                       \
+  if (HAS_VARIANTS(#__VA_ARGS__) && strcmp(#TYPE, "none")) {                                                                               \
+    Variants _vs = ap_split_string(#__VA_ARGS__);                                                                                          \
+    al_foreach(_v, &_vs) {                                                                                                                 \
+      fprintf(fd, "complete -c %s -n '__fish_seen_argument -l " #NAME, exec_name);                                                         \
+      if (HAS_SF(SF)) fprintf(fd, " -s " #SF);                                                                                             \
+      fprintf(fd, "' -a '%s'\n", *_v);                                                                                                     \
+    }                                                                                                                                      \
+    al_free(&_vs);                                                                                                                         \
   }
   FLAGS_LIST(FLAG)
 #undef FLAG
@@ -738,16 +738,16 @@ AP_ATTRIBUTES void ap_completions_fish(FILE *fd) {
   fprintf(fd, "\n");
 
   // Positional arguments with variants
-#define POS_ARG(NAME, REQUIRED, DEFAULT, DESC, ...) \
-  if (HAS_VARIANTS(#__VA_ARGS__)) { \
-    fprintf(fd, "# " #NAME ": " DESC "\n"); \
-    { \
-      Variants _vs = ap_split_string(#__VA_ARGS__); \
-      al_foreach(_v, &_vs) { \
-        fprintf(fd, "complete -c %s -a '%s' -d '" #NAME "'\n", exec_name, *_v); \
-      } \
-      al_free(&_vs); \
-    } \
+#define POS_ARG(NAME, REQUIRED, DEFAULT, DESC, ...)                                                                                        \
+  if (HAS_VARIANTS(#__VA_ARGS__)) {                                                                                                        \
+    fprintf(fd, "# " #NAME ": " DESC "\n");                                                                                                \
+    {                                                                                                                                      \
+      Variants _vs = ap_split_string(#__VA_ARGS__);                                                                                        \
+      al_foreach(_v, &_vs) {                                                                                                               \
+        fprintf(fd, "complete -c %s -a '%s' -d '" #NAME "'\n", exec_name, *_v);                                                            \
+      }                                                                                                                                    \
+      al_free(&_vs);                                                                                                                       \
+    }                                                                                                                                      \
   }
   POS_ARGS_LIST(POS_ARG)
 #undef POS_ARG
@@ -761,8 +761,8 @@ struct Parsed_Args {
 };
 
 #define IS_NUM(C) ((C) >= '0' && (C) <= '9')
-#define IS_HEX(C)                                                                                                         \
-  (((C) >= '0' && (C) <= '9') || ((C) >= 'a' && (C) <= 'f') ||                                                            \
+#define IS_HEX(C)                                                                                                                          \
+  (((C) >= '0' && (C) <= '9') || ((C) >= 'a' && (C) <= 'f') ||                                                                             \
    ((C) >= 'A' && (C) <= 'F'))
 #define IS_BIN(C) ((C) == '0' || (C) == '1')
 #define IS_OCT(C) ((C) >= '0' && (C) <= '7')
@@ -946,19 +946,19 @@ AP_ATTRIBUTES Args ap_parse_args(int argc, char **argv) {
 #undef AP_DEFAULT_OR_ZERO
 
 #define VERIFY_VARIANTS(ARG, VARIANTS) 
-#define FLAG(NAME, SF, TYPE, REQUIRED, DEFAULT, DESC, ...)                                                                \
-  else if (!options_terminated && (!strcmp(args.items[i], "--" #NAME) || !strcmp(args.items[i], "-" #SF))) {                          \
-    if(0 != strcmp(#TYPE, "none") && 0 != strlen(#__VA_ARGS__)) ap_check_variants(#NAME, args.items[i+1], #__VA_ARGS__);        \
-    ArgValue av = __parse_arg((char*)#NAME, (char*)#TYPE, args.count, args.items, i, REQUIRED);                                       \
-    switch (av.type) {                                                                                                    \
-      case 'b': ret.NAME = *(TYPE*)&av.value.b; break;                                                                    \
-      case 'i': ret.NAME = *(TYPE*)&av.value.i; break;                                                                    \
-      case 'f': ret.NAME = *(TYPE*)&av.value.f; break;                                                                    \
-      case 'c': ret.NAME = *(TYPE*)&av.value.c; break;                                                                    \
-      case 's': ret.NAME = *(TYPE*)&av.value.s; break;                                                                    \
-    };                                                                                                                    \
-    if(0 != strcmp(#TYPE, "none")) ++i;                                                                                   \
-    parsed.NAME = true;                                                                                                   \
+#define FLAG(NAME, SF, TYPE, REQUIRED, DEFAULT, DESC, ...)                                                                                 \
+  else if (!options_terminated && (!strcmp(args.items[i], "--" #NAME) || !strcmp(args.items[i], "-" #SF))) {                               \
+    if(0 != strcmp(#TYPE, "none") && 0 != strlen(#__VA_ARGS__)) ap_check_variants(#NAME, args.items[i+1], #__VA_ARGS__);                   \
+    ArgValue av = __parse_arg((char*)#NAME, (char*)#TYPE, args.count, args.items, i, REQUIRED);                                            \
+    switch (av.type) {                                                                                                                     \
+      case 'b': ret.NAME = *(TYPE*)&av.value.b; break;                                                                                     \
+      case 'i': ret.NAME = *(TYPE*)&av.value.i; break;                                                                                     \
+      case 'f': ret.NAME = *(TYPE*)&av.value.f; break;                                                                                     \
+      case 'c': ret.NAME = *(TYPE*)&av.value.c; break;                                                                                     \
+      case 's': ret.NAME = *(TYPE*)&av.value.s; break;                                                                                     \
+    };                                                                                                                                     \
+    if(0 != strcmp(#TYPE, "none")) ++i;                                                                                                    \
+    parsed.NAME = true;                                                                                                                    \
   }
 
   ret.pos_args.exec_name = args.items[0];
@@ -978,9 +978,9 @@ AP_ATTRIBUTES Args ap_parse_args(int argc, char **argv) {
       } else { // POSITIONAL
         if(c < ARGS_COUNT) {
           switch(c) {
-#define POS_ARG(NAME, REQUIRED, DEFAULT, DESC, ...) case NAME: {                                                          \
-  if(0 != strlen(#__VA_ARGS__)) ap_check_variants(#NAME, args.items[i], #__VA_ARGS__);                                      \
-  ret.pos_args.NAME = args.items[i];                                                                                            \
+#define POS_ARG(NAME, REQUIRED, DEFAULT, DESC, ...) case NAME: {                                                                           \
+  if(0 != strlen(#__VA_ARGS__)) ap_check_variants(#NAME, args.items[i], #__VA_ARGS__);                                                     \
+  ret.pos_args.NAME = args.items[i];                                                                                                       \
 } break;
             POS_ARGS_LIST(POS_ARG)
 #undef POS_ARG
@@ -1001,23 +1001,23 @@ AP_ATTRIBUTES Args ap_parse_args(int argc, char **argv) {
 
 #undef FLAG
 
-#define FLAG(NAME, SF, TYPE, REQUIRED, DEFAULT, DESC, ...)                                                                \
-  if (REQUIRED && !parsed.NAME) {                                                                                         \
-    fprintf(AP_ERR_FD, "ERROR: Flag --" #NAME " required but not found\n\n");                                                \
-    ap_usage(AP_ERR_FD);                                                                                                     \
-    AP_EXIT(1);                                                                                                              \
+#define FLAG(NAME, SF, TYPE, REQUIRED, DEFAULT, DESC, ...)                                                                                 \
+  if (REQUIRED && !parsed.NAME) {                                                                                                          \
+    fprintf(AP_ERR_FD, "ERROR: Flag --" #NAME " required but not found\n\n");                                                              \
+    ap_usage(AP_ERR_FD);                                                                                                                   \
+    AP_EXIT(1);                                                                                                                            \
   }
   FLAGS_LIST(FLAG)
 #undef FLAG
 
   c = 0;
-#define POS_ARG(NAME, REQUIRED, DEFAULT, DESC, ...) if (REQUIRED) {                                                       \
-  if(ret.pos_args.NAME == NULL) {                                                                                         \
-    fprintf(AP_ERR_FD, "ERROR: Positional arg <" #NAME "> (%d) required but not found\n\n", c);                              \
-    ap_usage(AP_ERR_FD);                                                                                                     \
-    AP_EXIT(1);                                                                                                              \
-  }                                                                                                                       \
-  c++;                                                                                                                    \
+#define POS_ARG(NAME, REQUIRED, DEFAULT, DESC, ...) if (REQUIRED) {                                                                        \
+  if(ret.pos_args.NAME == NULL) {                                                                                                          \
+    fprintf(AP_ERR_FD, "ERROR: Positional arg <" #NAME "> (%d) required but not found\n\n", c);                                            \
+    ap_usage(AP_ERR_FD);                                                                                                                   \
+    AP_EXIT(1);                                                                                                                            \
+  }                                                                                                                                        \
+  c++;                                                                                                                                     \
 } else goto unrequired;
   POS_ARGS_LIST(POS_ARG)
 #undef POS_ARG
@@ -1026,7 +1026,7 @@ unrequired:
   for (int i = c; i < ARGS_COUNT; ++i) {
     // printf("%d: ---------------\n", i);
     switch(i) {
-#define POS_ARG(NAME, REQUIRED, DEFAULT, DESC, ...)                                                                       \
+#define POS_ARG(NAME, REQUIRED, DEFAULT, DESC, ...)                                                                                        \
       case NAME: { if(0 != strlen(#DEFAULT) && ret.pos_args.NAME == NULL) ret.pos_args.NAME = DEFAULT "\0"; } break;
       POS_ARGS_LIST(POS_ARG)
 #undef POS_ARG
