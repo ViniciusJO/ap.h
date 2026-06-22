@@ -1,3 +1,6 @@
+// TODO: annotate that _XOPEN_SOURCE >= 700 is neccessary because of open_memstream
+// TODO: document AP_NO_HELP
+
 /*
   ap.h - Command-line argument parser using X-macros
 
@@ -5,17 +8,27 @@
 
   1. Define your flags and positional arguments using parameterized macros:
 
-    // FLAG(NAME, SHORT_FORM, TYPE, REQUIRED, DEFAULT, DESCRIPTION, ...VARIANTS)
-    #define FLAGS_LIST(FLAG)                                              \
-      FLAG(verbose, v, bool, false, false, "Enable verbose output")       \
-      FLAG(config, c, char*, false, "config.ini", "Config file path")     \
-      FLAG(threads, t, int, false, 4, "Number of threads")                \
-      FLAG(mode, m, char*, false, "fast", "Run mode", fast, safe, debug)
+    Format reference:
 
-    // POS_ARG(NAME, REQUIRED, DEFAULT, DESCRIPTION, ...VARIANTS)
-    #define POS_ARGS_LIST(POS_ARG)                                        \
-      POS_ARG(input, true, "", "Input file")                              \
-      POS_ARG(output, false, "out.txt", "Output file")
+      // #define FLAGS_LIST(FLAG) \
+      //   FLAG(NAME, SHORT_FORM, TYPE, REQUIRED, DEFAULT, DESCRIPTION, ...VARIANTS)
+      
+      // #define POS_ARGS_LIST(POS_ARG)                                        \
+      //   POS_ARG(NAME, REQUIRED, DEFAULT, DESCRIPTION, ...VARIANTS)
+
+    Example:
+
+      // FLAG(NAME, SHORT_FORM, TYPE, REQUIRED, DEFAULT, DESCRIPTION, ...VARIANTS)
+      #define FLAGS_LIST(FLAG)                                              \
+        FLAG(verbose, v, bool, false, false, "Enable verbose output")       \
+        FLAG(config, c, char*, false, "config.ini", "Config file path")     \
+        FLAG(threads, t, int, false, 4, "Number of threads")                \
+        FLAG(mode, m, char*, false, "fast", "Run mode", fast, safe, debug)
+
+      // POS_ARG(NAME, REQUIRED, DEFAULT, DESCRIPTION, ...VARIANTS)
+      #define POS_ARGS_LIST(POS_ARG)                                        \
+        POS_ARG(input, true, "", "Input file")                              \
+        POS_ARG(output, false, "out.txt", "Output file")
 
   2. Include the header and parse:
 
@@ -407,7 +420,7 @@ AP_ATTRIBUTES void ap_completions_fish(FILE *fd);
 #endif //__cplusplus
 #endif //__AP_H__
 
-// #define AP_IMPLEMENTATIONS
+#define AP_IMPLEMENTATIONS
 #ifdef AP_IMPLEMENTATIONS
 #ifndef __AP_IMP__
 #define __AP_IMP__
@@ -416,6 +429,8 @@ extern "C" {
 #endif //__cplusplus
 
 #include <assert.h>
+#include <stddef.h>
+#include <stdio.h>
 #include <stddef.h>
 #include <string.h>
 #include <ctype.h>
@@ -494,7 +509,9 @@ AP_ATTRIBUTES void ap_usage(FILE *fd) {
   DESC, strlen(#DEFAULT) != 0 ? "  (default: " #DEFAULT ")" : "",                                                                          \
   (0 != strlen(#__VA_ARGS__)) ? "  (variants: " #__VA_ARGS__ ")": ""                                                                       \
 );
+#ifndef AP_NO_HELP
   POS_ARGS_DEFAULT_LIST
+#endif//AP_NO_HELP
   POS_ARGS_LIST(POS_ARG)
 #undef POS_ARG
 
@@ -521,7 +538,9 @@ AP_ATTRIBUTES void ap_usage(FILE *fd) {
   strlen(#DEFAULT) == 0 ? "" : "(default: ", #DEFAULT, strlen(#DEFAULT) == 0 ? ' ' : ')',                                                  \
   (0 != strlen(#__VA_ARGS__)) ? "(variants: " #__VA_ARGS__ ")": ""                                                                         \
 );
+#ifndef AP_NO_HELP
   FLAGS_DEFAULT_LIST(FLAG)
+#endif//AP_NO_HELP
   FLAGS_LIST(FLAG)
 #undef FLAG
 
@@ -534,6 +553,8 @@ AP_ATTRIBUTES char *ap_coma_to_space_separeted_list(const char * const list) {
   for(size_t i = 0; i < len; i++) if(',' == copy[i]) copy[i] = ' ';
   return copy;
 }
+
+#include <stdio.h>
 
 AP_ATTRIBUTES char *ap_positional_completion_variants(const char * const list) {
   Variants vs = ap_split_string(list);
@@ -687,7 +708,9 @@ AP_ATTRIBUTES void ap_completions_bash(FILE *fd) {
 #undef FLAG
 #undef HAS_SF
 
+#ifndef AP_NO_HELP
   fprintf(fd, "--help -h");
+#endif//AP_NO_HELP
   fprintf(fd, "' -- \"$cur\"))\n");
   fprintf(fd, "\tfi\n");
 
@@ -702,7 +725,9 @@ AP_ATTRIBUTES void ap_completions_fish(FILE *fd) {
   fprintf(fd, "complete -c %s -f\n\n", exec_name);
 
   // Help flag
+#ifndef AP_NO_HELP
   fprintf(fd, "complete -c %s -s h -l help -d 'Shows this help message'\n", exec_name);
+#endif//AP_NO_HELP
 
   // Flags
 #define HAS_SF(SF) (strlen(#SF) > 0 && strcmp(#SF, "-"))
@@ -906,10 +931,14 @@ AP_ATTRIBUTES Args ap_parse_args(int argc, char **argv) {
   }
 
   if(args.count >= 2) {
+
+#ifndef AP_NO_HELP
     if(0 == strcmp(args.items[1], "help")) {
       ap_usage(AP_OUT_FD);
       AP_EXIT(0);
-    } else if(0 == strcmp(args.items[1], "completions")) {
+    } else
+#endif//AP_NO_HELP
+    if(0 == strcmp(args.items[1], "completions")) {
       if(args.count < 3) {
         // TODO: inform correct usage of completions
         ap_usage(AP_OUT_FD);
@@ -928,7 +957,6 @@ AP_ATTRIBUTES Args ap_parse_args(int argc, char **argv) {
   }
 
   int c = 0;
-  // PosArgs args = {0};
   Args ret = {0};
   struct Parsed_Args parsed = {0};
 
@@ -937,7 +965,9 @@ AP_ATTRIBUTES Args ap_parse_args(int argc, char **argv) {
 #define AP_DEFAULT_OR_ZERO_IMPL(...) AP_GET_SECOND(_, ##__VA_ARGS__, 0)
 #define AP_DEFAULT_OR_ZERO(...) AP_DEFAULT_OR_ZERO_IMPL(__VA_ARGS__)
 
-#define FLAG(NAME, SF, TYPE, REQUIRED, DEFAULT, DESC, ...) if(0 != strlen(#DEFAULT)) ret.NAME = (TYPE)AP_DEFAULT_OR_ZERO(DEFAULT);
+#define FLAG(NAME, SF, TYPE, REQUIRED, DEFAULT, DESC, ...) \
+  if(0 != strlen(#DEFAULT)) \
+    ret.NAME = (TYPE)AP_DEFAULT_OR_ZERO(DEFAULT);
   FLAGS_LIST(FLAG)
 #undef FLAG
 
@@ -968,7 +998,12 @@ AP_ATTRIBUTES Args ap_parse_args(int argc, char **argv) {
   for (size_t i = 1; i < args.count; i++) {
 
     if(!options_terminated && !strcmp("--", args.items[i])) options_terminated = true;
-    else if(!options_terminated && (0 == strcmp(args.items[i], "-h") || (0 == strcmp(args.items[i], "--help")))) { ap_usage(AP_OUT_FD); AP_EXIT(0); }
+#ifndef AP_NO_HELP
+    else if(!options_terminated && (
+      0 == strcmp(args.items[i], "-h") ||
+      0 == strcmp(args.items[i], "--help")
+    )) { ap_usage(AP_OUT_FD); AP_EXIT(0); }
+#endif//AP_NO_HELP
     FLAGS_LIST(FLAG)
     else {
       if(!options_terminated && args.items[i][0] == '-' && !IS_NUM(args.items[i][1])) {

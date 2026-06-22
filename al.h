@@ -63,6 +63,8 @@ extern void exit(int status);
 #endif//AL_EXIT
 
 #define al_define(type, name) typedef struct { type *items; size_t count; size_t capacity; } name
+#define AL_DEFINITION(type) struct { type *items; size_t count; size_t capacity; }
+#define AL_NAMED_DEFINITION(name, type) struct name { type *items; size_t count; size_t capacity; }
 
 #define al_reserve(al, expected_capacity) do {                                      \
   if ((expected_capacity) > (al)->capacity) {                                       \
@@ -81,9 +83,9 @@ extern void exit(int status);
 */
 
 // Append an item to an array list
-#define al_append(al, item) do {       \
-  al_reserve((al), (al)->count + 1);   \
-  (al)->items[(al)->count++] = (item); \
+#define al_append(al, item) do {     \
+  al_reserve((al), (al)->count + 1); \
+  (al)->items[(al)->count++] = item; \
 } while (0)
 
 // Append several items to a dynamic array
@@ -269,12 +271,49 @@ extern void exit(int status);
   AL_FPRINTF(stdout, " }" __VA_ARGS__); \
 } while(0)
 
+#define al_print_named(al,...) do { \
+  /*AL_FPRINTF(stdout, #al "[%ld/%ld] = ", (al)->count, (al)->capacity); */\
+  const char* name = #al; \
+  AL_FPRINTF(stdout, "%s%s = { ", (name[0] == '&') ? "" : "*", (name[0] == '&') ? name+1 : name); \
+  al_foreach(i, al) { \
+    AL_FPRINTF(stdout, FMT(*i), *i); \
+    AL_FPRINTF(stdout, "%s", (al)-> count-1 != i_idx ? ", " : "" ); \
+  } else AL_FPRINTF(stdout, "NULL\n"); \
+  AL_FPRINTF(stdout, " }" __VA_ARGS__); \
+} while(0)
+
+#define al_println(al,...) do { \
+  al_print(al, __VA_ARGS__); \
+  AL_FPRINTF(stdout, "\n"); \
+} while(0)
+
+#define al_println_named(al,...) do { \
+  al_print_named(al, __VA_ARGS__); \
+  AL_FPRINTF(stdout, "\n"); \
+} while(0)
+
 #define al_print_object(al) do { \
   AL_FPRINTF(stdout, "{\n  .count = %ld,\n  .capacity = %ld,\n  .items = ", (al)->count, (al)->capacity); \
   al_print(al); \
   AL_FPRINTF(stdout, "\n}\n"); \
 } while(0)
 
+#define al_print_object_named(al) do { \
+  const char* name = #al; \
+  AL_FPRINTF(stdout, "%s%s = {\n  .count = %ld,\n  .capacity = %ld,\n  .items = ", (name[0] == '&') ? "" : "*", (name[0] == '&') ? name+1 : name, (al)->count, (al)->capacity); \
+  al_print(al); \
+  AL_FPRINTF(stdout, "\n}\n"); \
+} while(0)
+
+// #define al_println_object(al) do { \
+//   al_print_object(al); \
+//   AL_FPRINTF(stdout, "\n"); \
+// } while(0)
+
+// #define al_println_object_named(al) do { \
+//   al_print_object_named(al); \
+//   AL_FPRINTF(stdout, "\n"); \
+// } while(0)
 
 
 
@@ -282,6 +321,10 @@ extern void exit(int status);
 #ifndef ARRAY
 #define ARRAY(...) { __VA_ARGS__ }
 #endif//ARRAY
+
+#ifndef STRUCT
+#define STRUCT(...) { __VA_ARGS__ }
+#endif//STRUCT
 
 #define al_expect_literal(element_type, al, expected) do { \
   element_type expected_elements[] = expected; \
